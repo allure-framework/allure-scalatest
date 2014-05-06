@@ -68,12 +68,13 @@ scalacOptions <++= scalaVersion map { sv =>
   else Nil
 }
 
-javacOptions ++= Seq("-Xlint:unchecked", "-Xlint:deprecation")
+javacOptions ++= Seq("-Xlint:unchecked", "-Xlint:deprecation", "-source", "1.7", "-target", "1.7")
 
 /* dependencies */
 libraryDependencies ++= Seq (
   "org.scalatest" % "scalatest_2.10" % "2.1.4",
-  "ru.yandex.qatools.allure" % "allure-java-aspects" % "1.3.7"
+  "ru.yandex.qatools.allure" % "allure-java-aspects" % "1.3.7",
+  "org.mockito" % "mockito-all" % "1.9.5"
 )
 
 /* you may need these repos */
@@ -131,16 +132,14 @@ publishArtifact in Test := false
 
 pomIncludeRepository := { _ => false }
 
-pomExtra := (
-  <developers>
-    <developer>
-      <id>vania-pooh</id>
-      <name>Ivan Krutov</name>
-      <email>vania-pooh@yandex-team.ru</email>
-      <url>http://allure.qatools.ru/</url>
-    </developer>
-  </developers>
-)
+pomExtra := <developers>
+  <developer>
+    <id>vania-pooh</id>
+    <name>Ivan Krutov</name>
+    <email>vania-pooh@yandex-team.ru</email>
+    <url>http://allure.qatools.ru/</url>
+  </developer>
+</developers>
 
 // Josh Suereth's step-by-step guide to publishing on sonatype
 // http://www.scala-sbt.org/using_sonatype.html

@@ -2,147 +2,81 @@ package ru.yandex.qatools.allure.scalatest
 
 import org.scalatest.Reporter
 import org.scalatest.events._
-import org.scalatest.events.TestIgnored
 import ru.yandex.qatools.allure.Allure
-import ru.yandex.qatools.allure.events.{TestCaseFailureEvent, TestSuiteFinishedEvent, TestSuiteStartedEvent, TestCaseFinishedEvent}
+import ru.yandex.qatools.allure.events._
 import java.util.UUID
+import ru.yandex.qatools.allure.utils.AnnotationManager
+import java.lang.annotation.Annotation
+import org.scalatest.events.TestStarting
+import org.scalatest.events.Event
+import org.scalatest.events.SuiteStarting
+import org.scalatest.events.TestSucceeded
+import org.scalatest.events.SuiteCompleted
+import org.scalatest.events.TopOfMethod
+import org.scalatest.events.TestIgnored
+import org.scalatest.events.TestFailed
+import scala.Some
+import org.scalatest.events.TopOfClass
 
 class AllureReporter extends Reporter {
+  
+  private var lc = Allure.LIFECYCLE
 
-  private val lifecycle = Allure.LIFECYCLE
-
-  private val ordinalToSuiteUIDMap = scala.collection.mutable.HashMap[Int, String]()
+  private val suiteIDToUUIDMap = scala.collection.mutable.HashMap[String, String]()
 
   def apply(event: Event) = event match {
 
-    case TestStarting(
-      ordinal,
-      suiteName,
-      suiteId,
-      suiteClassName,
-      testName,
-      testText,
-      formatter,
-      location,
-      rerunner,
-      payload,
-      threadName,
-      timeStamp
-    ) => testCaseStarted()
+    case TestStarting(_, _, suiteId, _, _, _, _, location, _, _, _, _) => testCaseStarted(suiteId, location)
 
-    case TestSucceeded(
-      ordinal,
-      suiteName,
-      suiteId,
-      suiteClassName,
-      testName,
-      testText,
-      recordedEvents,
-      duration,
-      formatter,
-      location,
-      rerunner,
-      payload,
-      threadName,
-      timeStamp
-    ) => testCaseFinished()
+    case TestSucceeded(_, _, _, _, _, _, _, _, _, _, _, _, _, _) => testCaseFinished()
 
-    case TestFailed(
-      ordinal,
-      message,
-      suiteName,
-      suiteId,
-      suiteClassName,
-      testName,
-      testText,
-      recordedEvents,
-      throwable,
-      duration,
-      formatter,
-      location,
-      rerunner,
-      payload,
-      threadName,
-      timeStamp
-    ) => testCaseFailed(throwable match {
+    case TestFailed(_, message, _, _, _, _, _, _, throwable, _, _, _, _, _, _, _) => testCaseFailed(throwable match {
       case Some(t) => t
-      case None => new RuntimeException("Test case failed")
+      case None => new RuntimeException(message)
     })
 
-    case TestIgnored(
-      ordinal,
-      suiteName,
-      suiteId,
-      suiteClassName,
-      testName,
-      testText,
-      formatter,
-      location,
-      payload,
-      threadName,
-      timeStamp
-    ) => testCaseSkipped(new RuntimeException("Test case skipped"))
+    case TestIgnored(_, _, _, _, _, _, _, _, _, _, _) => testCaseSkipped()
 
-    case SuiteStarting(
-      ordinal,
-      suiteName,
-      suiteId,
-      suiteClassName,
-      formatter,
-      location,
-      rerunner,
-      payload,
-      threadName,
-      timeStamp
-    ) => testSuiteStarted(ordinal, suiteName)
+    case SuiteStarting(_, _, suiteId, _, _, location, _, _, _, _) => testSuiteStarted(getSuiteUuid(suiteId), suiteId, location)
 
-    case SuiteCompleted(
-      ordinal,
-      suiteName,
-      suiteId,
-      suiteClassName,
-      duration,
-      formatter,
-      location,
-      rerunner,
-      payload,
-      threadName,
-      timeStamp
-    ) => testSuiteFinished(ordinal)
-
-    case SuiteAborted(
-      ordinal,
-      message,
-      suiteName,
-      suiteId,
-      suiteClassName,
-      throwable,
-      duration,
-      formatter,
-      location,
-      rerunner,
-      payload,
-      threadName,
-      timeStamp
-    ) => testSuiteFinished(ordinal)
-
+    case SuiteCompleted(_, _, suiteId, _, _, _, _, _, _, _, _) => testSuiteFinished(getSuiteUuid(suiteId))
+    
     case _ => ()
 
   }
 
-  private def testSuiteStarted(ordinal: Ordinal, suiteName: String) {
-    val uuid = getSuiteUuid(ordinal)
-    lifecycle.fire(new TestSuiteStartedEvent(uuid, suiteName))
+  def getSuiteUuid(suiteId: String): String = suiteIDToUUIDMap.get(suiteId) match {
+    case Some(uuid) => uuid
+    case None =>
+      val uuid = UUID.randomUUID().toString
+      suiteIDToUUIDMap += suiteId -> uuid
+      uuid
   }
 
-  private def testSuiteFinished(ordinal: Ordinal) {
-    val uuid = getSuiteUuid(ordinal)
+  def lifecycle = lc
+
+  def setLifecycle(lifecycle: Allure) {
+    lc = lifecycle
+  }
+
+  private def testSuiteStarted(uuid: String, suiteId: String, location: Option[Location]) {
+    val event = new TestSuiteStartedEvent(uuid, suiteId)
+    val annotationManager = new AnnotationManager(getAnnotations(location):_*)
+    annotationManager.update(event)
+    lifecycle.fire(event)
+  }
+
+  private def testSuiteFinished(uuid: String) {
     lifecycle.fire(new TestSuiteFinishedEvent(uuid))
   }
 
-  private def testCaseStarted() {
-    //TODO: implement this!
-    lifecycle.fire(new TestCaseFinishedEvent())
+  private def testCaseStarted(suiteId: String, location: Option[Location]) {
+    val uuid = getSuiteUuid(suiteId)
+    val methodName = getMethodName(location)
+    val event = new TestCaseStartedEvent(uuid, methodName)
+    val annotationManager = new AnnotationManager(getAnnotations(location):_*)
+    annotationManager.update(event)
+    lifecycle.fire(event)
   }
 
   private def testCaseFinished() {
@@ -153,17 +87,25 @@ class AllureReporter extends Reporter {
     lifecycle.fire(new TestCaseFailureEvent().withThrowable(throwable))
   }
 
-  private def testCaseSkipped(throwable: Throwable) {
-    lifecycle.fire(new TestCaseFailureEvent().withThrowable(throwable))
+  private def testCaseSkipped() {
+    lifecycle.fire(new TestCaseSkippedEvent())
   }
 
-  private def getSuiteUuid(ordinal: Ordinal): String = ordinalToSuiteUIDMap.get(ordinal.runStamp) match {
-    case Some(uuid) => uuid
-    case None => {
-      val uuid = UUID.randomUUID().toString
-      ordinalToSuiteUIDMap += ordinal.runStamp -> uuid
-      uuid
+  def getAnnotations(location: Option[Location]): List[Annotation] = location match {
+    case Some(ln) => ln match {
+      case TopOfClass(className) => Class.forName(className).getAnnotations.toList
+      case TopOfMethod(className, methodName) => Class.forName(className).getMethod(methodName).getDeclaredAnnotations.toList
+      case _ => List()
     }
+    case _ => List()
+  }
+  
+  def getMethodName(location: Option[Location]): String = location match {
+    case Some(ln) => ln match {
+      case TopOfMethod(_, methodName) => methodName
+      case _ => ""
+    }
+    case _ => ""
   }
 
 }

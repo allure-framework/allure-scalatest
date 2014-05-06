@@ -4,14 +4,14 @@ This adapter allows to retrieve test execution data from ScalaTest framework and
 ## Usage
 Simply add the following dependency to build.sbt:
 ```scala
-libraryDependencies += "ru.yandex.qatools.allure" % "allure-scalatest" % "1.0.0"
+libraryDependencies += "ru.yandex.qatools.allure" % "allure-scalatest_2.10" % "1.3.8-SNAPSHOT"
 ```
 
 Then attach **AllureReporter** in build.sbt:
 ```scala
 testOptions in Test ++= Seq(
     Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
-    Tests.Argument(TestFrameworks.ScalaTest, "-r", "ru.yandex.qatools.allure.scalatest.AllureReporter")
+    Tests.Argument(TestFrameworks.ScalaTest, "-C", "ru.yandex.qatools.allure.scalatest.AllureReporter")
 )
 ```
 

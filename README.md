@@ -17,7 +17,3 @@ testOptions in Test ++= Seq(
     Tests.Argument(TestFrameworks.ScalaTest, "-C", "ru.yandex.qatools.allure.scalatest.AllureReporter")
 )
 ```
-
-## Contact
-
-- Mailing list [allure@yandex-team.ru](mailto:allure@yandex-team.ru)

@@ -1,6 +1,9 @@
 # Allure ScalaTest Adapter
 This adapter allows to retrieve test execution data from ScalaTest framework and convert it to the form suitable for Allure report generation.
 
+## Example project
+Example project is located at: https://github.com/allure-framework/allure-scalatest-example
+
 ## Usage
 Simply add the following dependency to build.sbt:
 ```scala

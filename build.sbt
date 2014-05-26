@@ -77,28 +77,8 @@ libraryDependencies ++= Seq (
   "org.mockito" % "mockito-all" % "1.9.5"
 )
 
-/* you may need these repos */
-resolvers ++= Seq(
-  // Resolver.sonatypeRepo("snapshots")
-  // Resolver.typesafeIvyRepo("snapshots")
-  // Resolver.typesafeIvyRepo("releases")
-  // Resolver.typesafeRepo("releases")
-  // Resolver.typesafeRepo("snapshots")
-  // JavaNet2Repository,
-  // JavaNet1Repository,
-  // "spray repo" at "http://repo.spray.io",
-)
-
-// ivyXML := <dependencies>
-//             <exclude module="logback-classic" />
-//           </dependencies>
-
 /* testing */
 parallelExecution in Test := false
-
-// testOptions += Tests.Argument(TestFrameworks.Specs2, "console", "junitxml")
-
-// parallelExecution in Global := false //no parallelism between subprojects
 
 /* sbt behavior */
 logLevel in compile := Level.Warn
@@ -118,17 +98,9 @@ publishTo <<= version { (v: String) =>
   else Some("releases" at nexus + "service/local/staging/deploy/maven2")
 }
 
-mappings in (Compile, packageBin) ~= { (ms: Seq[(File, String)]) =>
-  ms filter { case (file, toPath) =>
-      toPath != "application.conf"
-  }
-}
-
 publishArtifact in Test := false
 
-// publishArtifact in (Compile, packageDoc) := false
-
-// publishArtifact in (Compile, packageSrc) := false
+publishArtifact in (Compile, packageDoc) := false
 
 pomIncludeRepository := { _ => false }
 
@@ -140,6 +112,3 @@ pomExtra := <developers>
     <url>http://allure.qatools.ru/</url>
   </developer>
 </developers>
-
-// Josh Suereth's step-by-step guide to publishing on sonatype
-// http://www.scala-sbt.org/using_sonatype.html

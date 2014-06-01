@@ -5,7 +5,7 @@ This adapter allows to retrieve test execution data from ScalaTest framework and
 Example project is located at: https://github.com/allure-framework/allure-scalatest-example
 
 ## Usage
-Simply add the following dependency to build.sbt:
+**In order to use this adapter you need to have JDK 1.7+ installed.** To enabled adapter simply add the following dependency to build.sbt:
 ```scala
 libraryDependencies += "ru.yandex.qatools.allure" % "allure-scalatest_2.10" % "1.3.9-SNAPSHOT"
 ```

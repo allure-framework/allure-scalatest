@@ -26,7 +26,7 @@ class AllureReporter extends Reporter {
 
   def apply(event: Event) = event match {
 
-    case TestStarting(_, _, suiteId, _, _, _, _, location, _, _, _, _) => testCaseStarted(suiteId, location)
+    case TestStarting(_, _, suiteId, _, testName, _, _, location, _, _, _, _) => testCaseStarted(suiteId, testName, location)
 
     case TestSucceeded(_, _, _, _, _, _, _, _, _, _, _, _, _, _) => testCaseFinished()
 
@@ -35,7 +35,11 @@ class AllureReporter extends Reporter {
       case None => new RuntimeException(message)
     })
 
-    case TestIgnored(_, _, _, _, _, _, _, _, _, _, _) => testCaseSkipped()
+    case TestIgnored(_, _, _, _, _, _, _, _, _, _, _) => testCaseCanceled()
+      
+    case TestCanceled(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => testCaseCanceled()
+      
+    case TestPending(_, _, _, _, _, _, _, _, _, _, _, _, _) => testCasePending()
 
     case SuiteStarting(_, _, suiteId, _, _, location, _, _, _, _) => testSuiteStarted(getSuiteUuid(suiteId), suiteId, location)
 
@@ -70,10 +74,9 @@ class AllureReporter extends Reporter {
     lifecycle.fire(new TestSuiteFinishedEvent(uuid))
   }
 
-  private def testCaseStarted(suiteId: String, location: Option[Location]) {
+  private def testCaseStarted(suiteId: String, testName: String, location: Option[Location]) {
     val uuid = getSuiteUuid(suiteId)
-    val methodName = getMethodName(location)
-    val event = new TestCaseStartedEvent(uuid, methodName)
+    val event = new TestCaseStartedEvent(uuid, testName)
     val annotationManager = new AnnotationManager(getAnnotations(location):_*)
     annotationManager.update(event)
     lifecycle.fire(event)
@@ -87,8 +90,12 @@ class AllureReporter extends Reporter {
     lifecycle.fire(new TestCaseFailureEvent().withThrowable(throwable))
   }
 
-  private def testCaseSkipped() {
-    lifecycle.fire(new TestCaseSkippedEvent())
+  private def testCaseCanceled() {
+    lifecycle.fire(new TestCaseCanceledEvent())
+  }
+  
+  private def testCasePending() {
+    lifecycle.fire(new TestCasePendingEvent())
   }
 
   def getAnnotations(location: Option[Location]): List[Annotation] = location match {
@@ -100,12 +107,4 @@ class AllureReporter extends Reporter {
     case _ => List()
   }
   
-  def getMethodName(location: Option[Location]): String = location match {
-    case Some(ln) => ln match {
-      case TopOfMethod(_, methodName) => methodName
-      case _ => ""
-    }
-    case _ => ""
-  }
-
 }

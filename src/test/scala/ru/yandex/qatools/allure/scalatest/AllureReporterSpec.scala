@@ -34,7 +34,6 @@ class AllureReporterSpec extends FlatSpec with BeforeAndAfter {
     reporter = spy(new AllureReporter)
     reporter.setLifecycle(allure)
     doReturn(testUuid).when(reporter).getSuiteUuid(any(classOf[String]))
-    doReturn(testMethodName).when(reporter).getMethodName(any(classOf[Option[Location]]))
   }
   
   "AllureReporter" should "fire Allure TestSuiteStarted event on suite start" in {
@@ -76,10 +75,10 @@ class AllureReporterSpec extends FlatSpec with BeforeAndAfter {
       "",
       "",
       None,
-      "",
+      testMethodName,
       "",
       None,
-      Some(TopOfMethod(testClassName, testMethodName)),
+      None,
       None,
       None,
       "",
@@ -152,7 +151,7 @@ class AllureReporterSpec extends FlatSpec with BeforeAndAfter {
     verify(allure).fire(any(classOf[TestCaseFailureEvent]))
   }
   
-  it should "fire TestCaseSkipped event when test case is skipped" in {
+  it should "fire TestCaseCanceled event when test case is skipped" in {
     reporter.apply(TestIgnored(
       testOrdinal,
       "",
@@ -166,9 +165,50 @@ class AllureReporterSpec extends FlatSpec with BeforeAndAfter {
       "",
       testTimestamp
     ))
-    verify(allure).fire(new TestCaseSkippedEvent)
+    verify(allure).fire(new TestCaseCanceledEvent)
   }
   
+  it should "fire TestCasePending event when test case is pending" in {
+    reporter.apply(TestPending(
+      testOrdinal,
+      testMessage,
+      "",
+      None,
+      "",
+      "",
+      collection.immutable.IndexedSeq.empty[RecordableEvent],
+      None,
+      None,
+      None,
+      None,
+      "",
+      testTimestamp
+    ))
+    verify(allure).fire(new TestCasePendingEvent)
+  }
+  
+  it should "fire TestCaseCanceled event when test case is canceled" in {
+    reporter.apply(TestCanceled(
+      testOrdinal,
+      testMessage,
+      "",
+      "",
+      None,
+      "",
+      "",
+      collection.immutable.IndexedSeq.empty[RecordableEvent],
+      None,
+      None,
+      None,
+      None,
+      None,
+      None,
+      "",
+      testTimestamp
+    ))
+    verify(allure).fire(new TestCaseCanceledEvent)
+  }
+    
   it should "return uuid on first and subsequent getSuiteUuid calls" in {
     val reporter = new AllureReporter
     val firstUUID = reporter.getSuiteUuid(testSuiteId)
@@ -176,17 +216,6 @@ class AllureReporterSpec extends FlatSpec with BeforeAndAfter {
     val secondUUID = reporter.getSuiteUuid(testSuiteId)
     assert(firstUUID == secondUUID)
     assert(UUID.fromString(firstUUID).equals(UUID.fromString(secondUUID)))
-  }
-  
-  it should "return " + testMethodName + " when called with Some(TopOfMethod(_, " + testMethodName + "))" in {
-    val reporter = new AllureReporter
-    assert(reporter.getMethodName(Some(TopOfMethod("", testMethodName))) == testMethodName)
-  }
-
-  it should "return empty string when called with any class except TopOfMethod or None" in {
-    val reporter = new AllureReporter
-    assert(reporter.getMethodName(Some(TopOfClass(""))) == new String())
-    assert(reporter.getMethodName(None) == new String())
   }
   
   it should "return empty list when called with any location except TopOfMethod or TopOfClass or None" in {

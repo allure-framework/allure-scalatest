@@ -3,7 +3,7 @@ name := "allure-scalatest"
 
 organization := "ru.yandex.qatools.allure"
 
-version := "1.3.9-SNAPSHOT"
+version := "1.4.0-SNAPSHOT"
 
 description := "Scalatest adapter for Allure framework."
 
@@ -73,7 +73,7 @@ javacOptions ++= Seq("-Xlint:unchecked", "-Xlint:deprecation", "-source", "1.7",
 /* dependencies */
 libraryDependencies ++= Seq (
   "org.scalatest" % "scalatest_2.10" % "2.1.4",
-  "ru.yandex.qatools.allure" % "allure-java-aspects" % "1.3.9",
+  "ru.yandex.qatools.allure" % "allure-java-aspects" % "1.4.0.RC3",
   "org.mockito" % "mockito-all" % "1.9.5"
 )
 

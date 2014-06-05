@@ -17,3 +17,16 @@ testOptions in Test ++= Seq(
     Tests.Argument(TestFrameworks.ScalaTest, "-C", "ru.yandex.qatools.allure.scalatest.AllureReporter")
 )
 ```
+
+## Publishing
+A publicly available (on public keyserver) GPG key should be present in you default GPG keyring. You need to create **sonatype.sbt** file in **~/.sbt/<sbt-version>/**:
+```scala
+credentials += Credentials("Sonatype Nexus Repository Manager",
+                           "oss.sonatype.org",
+                           "login",
+                           "password")
+```
+To publish simply run:
+```bash
+$ sbt publish-signed
+```

@@ -35,9 +35,9 @@ class AllureReporter extends Reporter {
       case None => new RuntimeException(message)
     })
 
-    case TestIgnored(_, _, _, _, _, _, _, _, _, _, _) => testCaseCanceled()
+    case TestIgnored(_, _, _, _, _, _, _, _, _, _, _) => testCaseCanceled(None)
       
-    case TestCanceled(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => testCaseCanceled()
+    case TestCanceled(_, _, _, _, _, _, _, _, throwable, _, _, _, _, _, _, _) => testCaseCanceled(throwable)
       
     case TestPending(_, _, _, _, _, _, _, _, _, _, _, _, _) => testCasePending()
 
@@ -90,8 +90,11 @@ class AllureReporter extends Reporter {
     lifecycle.fire(new TestCaseFailureEvent().withThrowable(throwable))
   }
 
-  private def testCaseCanceled() {
-    lifecycle.fire(new TestCaseCanceledEvent())
+  private def testCaseCanceled(throwable: Option[Throwable]) {
+    lifecycle.fire(throwable match {
+      case Some(t) => new TestCaseCanceledEvent().withThrowable(t)
+      case None => new TestCaseCanceledEvent()
+    })
   }
   
   private def testCasePending() {

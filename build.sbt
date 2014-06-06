@@ -74,7 +74,7 @@ javacOptions ++= Seq("-Xlint:unchecked", "-Xlint:deprecation", "-source", "1.7",
 libraryDependencies ++= Seq (
   "org.scalatest" % "scalatest_2.10" % "2.1.4",
   "ru.yandex.qatools.allure" % "allure-java-aspects" % "1.4.0.RC3",
-  "org.mockito" % "mockito-all" % "1.9.5"
+  "org.mockito" % "mockito-all" % "1.9.5" % "test"
 )
 
 /* testing */

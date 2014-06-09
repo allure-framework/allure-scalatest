@@ -71,9 +71,12 @@ scalacOptions <++= scalaVersion map { sv =>
 javacOptions ++= Seq("-Xlint:unchecked", "-Xlint:deprecation", "-source", "1.7", "-target", "1.7")
 
 /* dependencies */
+resolvers +=
+  "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
+
 libraryDependencies ++= Seq (
   "org.scalatest" % "scalatest_2.10" % "2.1.4",
-  "ru.yandex.qatools.allure" % "allure-java-aspects" % "1.4.0.RC3",
+  "ru.yandex.qatools.allure" % "allure-java-aspects" % "1.4.0-SNAPSHOT",
   "org.mockito" % "mockito-all" % "1.9.5" % "test"
 )
 

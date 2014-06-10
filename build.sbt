@@ -76,7 +76,7 @@ resolvers +=
 
 libraryDependencies ++= Seq (
   "org.scalatest" % "scalatest_2.10" % "2.1.4",
-  "ru.yandex.qatools.allure" % "allure-java-aspects" % "1.4.0-SNAPSHOT",
+  "ru.yandex.qatools.allure" % "allure-java-aspects" % "1.4.0.RC4",
   "org.mockito" % "mockito-all" % "1.9.5" % "test"
 )
 

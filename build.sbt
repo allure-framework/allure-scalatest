@@ -3,7 +3,7 @@ name := "allure-scalatest"
 
 organization := "ru.yandex.qatools.allure"
 
-version := "1.4.0-SNAPSHOT"
+version := "1.5.0-SNAPSHOT"
 
 description := "Scalatest adapter for Allure framework."
 
@@ -26,15 +26,9 @@ scmInfo := Some(
 organizationName := "Yandex LLC"
 
 /* scala versions and options */
-scalaVersion := "2.10.3"
+scalaVersion := "2.11.8"
 
-crossScalaVersions := Seq(
-  "2.8.0", "2.8.1", "2.8.2",
-  "2.9.0", "2.9.0-1",
-  "2.9.1", "2.9.1-1",
-  "2.9.2",
-  "2.9.3"
-)
+crossScalaVersions := Seq()
 
 // These options will be used for *all* versions.
 scalacOptions ++= Seq(
@@ -52,7 +46,9 @@ scalacOptions ++= Seq(
 
 // These language flags will be used only for 2.10.x.
 // Uncomment those you need, or if you hate SIP-18, all of them.
-scalacOptions <++= scalaVersion map { sv =>
+scalacOptions ++= {
+  val sv = scalaVersion.value
+
   if (sv startsWith "2.10") List(
     "-Xverify",
     "-Ywarn-all",
@@ -75,9 +71,9 @@ resolvers +=
   "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
 libraryDependencies ++= Seq (
-  "org.scalatest" % "scalatest_2.10" % "2.1.4",
-  "ru.yandex.qatools.allure" % "allure-java-aspects" % "1.4.0",
-  "org.mockito" % "mockito-all" % "1.9.5" % "test"
+  "org.scalatest" %% "scalatest" % "2.2.6",
+  "ru.yandex.qatools.allure" % "allure-java-aspects" % "1.4.23",
+  "org.mockito" % "mockito-core" % "2.4.2" % "test"
 )
 
 /* testing */
@@ -93,7 +89,8 @@ offline := false
 /* publishing */
 publishMavenStyle := true
 
-publishTo <<= version { (v: String) =>
+publishTo := {
+  val v = version.value
   val nexus = "https://oss.sonatype.org/"
   if (v.trim.endsWith("SNAPSHOT")) Some(
     "snapshots" at nexus + "content/repositories/snapshots"

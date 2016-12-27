@@ -1,6 +1,10 @@
 //addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.8.4")
 
-addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.1.0")
+resolvers += Resolver.url(
+  "rtimush/sbt-plugin-snapshots",
+  new URL("https://dl.bintray.com/rtimush/sbt-plugin-snapshots/"))(
+  Resolver.ivyStylePatterns)
+addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.0")
 
 addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.5.1")
 

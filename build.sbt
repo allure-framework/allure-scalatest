@@ -3,8 +3,6 @@ name := "allure-scalatest"
 
 organization := "ru.yandex.qatools.allure"
 
-version := "1.5.0-SNAPSHOT"
-
 description := "Scalatest adapter for Allure framework."
 
 homepage := Some(url("https://github.com/allure-framework/allure-scalatest"))
@@ -89,20 +87,37 @@ offline := false
 /* publishing */
 publishMavenStyle := true
 
-publishTo := {
-  val v = version.value
-  val nexus = "https://oss.sonatype.org/"
-  if (v.trim.endsWith("SNAPSHOT")) Some(
-    "snapshots" at nexus + "content/repositories/snapshots"
-  )
-  else Some("releases" at nexus + "service/local/staging/deploy/maven2")
-}
+// Add sonatype repository settings
+publishTo := Some(
+  if (isSnapshot.value)
+    Opts.resolver.sonatypeSnapshots
+  else
+    Opts.resolver.sonatypeStaging
+)
 
 publishArtifact in Test := false
 
 publishArtifact in (Compile, packageDoc) := false
 
 pomIncludeRepository := { _ => false }
+
+import ReleaseTransformations._
+
+releasePublishArtifactsAction := PgpKeys.publishSigned.value // Use publishSigned in publishArtifacts step
+releaseProcess := Seq[ReleaseStep](
+  checkSnapshotDependencies,
+  inquireVersions,
+  runClean,
+  runTest,
+  setReleaseVersion,
+  commitReleaseVersion,
+  tagRelease,
+  publishArtifacts,
+  setNextVersion,
+  commitNextVersion,
+  releaseStepCommand("sonatypeReleaseAll"),
+  pushChanges
+)
 
 pomExtra := <developers>
   <developer>

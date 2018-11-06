@@ -1,113 +1,91 @@
 package ru.yandex.qatools.allure.scalatest
 
+import java.lang.annotation.Annotation
+import java.util.UUID
+
 import org.scalatest.Reporter
-import org.scalatest.events._
+import org.scalatest.events.{Event, SuiteCompleted, SuiteStarting, TestFailed, TestIgnored, TestStarting, TestSucceeded, TopOfClass, TopOfMethod, _}
 import ru.yandex.qatools.allure.Allure
 import ru.yandex.qatools.allure.events._
-import java.util.UUID
 import ru.yandex.qatools.allure.utils.AnnotationManager
-import java.lang.annotation.Annotation
-import org.scalatest.events.TestStarting
-import org.scalatest.events.Event
-import org.scalatest.events.SuiteStarting
-import org.scalatest.events.TestSucceeded
-import org.scalatest.events.SuiteCompleted
-import org.scalatest.events.TopOfMethod
-import org.scalatest.events.TestIgnored
-import org.scalatest.events.TestFailed
-import scala.Some
-import org.scalatest.events.TopOfClass
 
 class AllureReporter extends Reporter {
-  
+
   private var lc = Allure.LIFECYCLE
 
   private val suiteIDToUUIDMap = scala.collection.mutable.HashMap[String, String]()
 
-  def apply(event: Event) = event match {
+  def apply(event: Event): Unit = event match {
 
-    case TestStarting(_, _, suiteId, _, testName, _, _, location, _, _, _, _) => testCaseStarted(suiteId, testName, location)
+    case event: TestFailed     => testCaseFailed(event.throwable.getOrElse(new RuntimeException(event.message)))
+    case event: TestStarting   => testCaseStarted(event.suiteId, event.testName, event.location)
+    case event: SuiteStarting  => testSuiteStarted(getSuiteUuid(event.suiteId), event.suiteId, event.location)
+    case event: SuiteCompleted => testSuiteFinished(getSuiteUuid(event.suiteId))
+    case event: TestCanceled   => testCaseCanceled(event.throwable)
 
-    case TestSucceeded(_, _, _, _, _, _, _, _, _, _, _, _, _, _) => testCaseFinished()
+    case _: TestPending   => testCasePending()
+    case _: TestIgnored   => testCaseCanceled(None)
+    case _: TestSucceeded => testCaseFinished()
 
-    case TestFailed(_, message, _, _, _, _, _, _, throwable, _, _, _, _, _, _, _) => testCaseFailed(throwable match {
-      case Some(t) => t
-      case None => new RuntimeException(message)
-    })
-
-    case TestIgnored(_, _, _, _, _, _, _, _, _, _, _) => testCaseCanceled(None)
-      
-    case TestCanceled(_, _, _, _, _, _, _, _, throwable, _, _, _, _, _, _, _) => testCaseCanceled(throwable)
-      
-    case TestPending(_, _, _, _, _, _, _, _, _, _, _, _, _) => testCasePending()
-
-    case SuiteStarting(_, _, suiteId, _, _, location, _, _, _, _) => testSuiteStarted(getSuiteUuid(suiteId), suiteId, location)
-
-    case SuiteCompleted(_, _, suiteId, _, _, _, _, _, _, _, _) => testSuiteFinished(getSuiteUuid(suiteId))
-    
     case _ => ()
 
   }
 
-  def getSuiteUuid(suiteId: String): String = suiteIDToUUIDMap.get(suiteId) match {
-    case Some(uuid) => uuid
-    case None =>
-      val uuid = UUID.randomUUID().toString
-      suiteIDToUUIDMap += suiteId -> uuid
-      uuid
+  def getSuiteUuid(suiteId: String): String = suiteIDToUUIDMap.getOrElse(suiteId, {
+    val uuid = UUID.randomUUID().toString
+    suiteIDToUUIDMap += suiteId -> uuid
+    uuid
   }
+  )
 
-  def lifecycle = lc
+  def lifecycle: Allure = lc
 
-  def setLifecycle(lifecycle: Allure) {
+  def setLifecycle(lifecycle: Allure): Unit = {
     lc = lifecycle
   }
 
-  private def testSuiteStarted(uuid: String, suiteId: String, location: Option[Location]) {
+  def getAnnotations(location: Option[Location]): List[Annotation] = location match {
+    case Some(TopOfClass(className))              => Class.forName(className).getAnnotations.toList
+    case Some(TopOfMethod(className, methodName)) => Class.forName(className).getMethod(methodName).getDeclaredAnnotations.toList
+    case _                                        => List()
+  }
+
+  private def testSuiteStarted(uuid: String, suiteId: String, location: Option[Location]): Unit = {
     val event = new TestSuiteStartedEvent(uuid, suiteId)
-    val annotationManager = new AnnotationManager(getAnnotations(location):_*)
+    val annotationManager = new AnnotationManager(getAnnotations(location): _*)
     annotationManager.update(event)
     lifecycle.fire(event)
   }
 
-  private def testSuiteFinished(uuid: String) {
+  private def testSuiteFinished(uuid: String): Unit = {
     lifecycle.fire(new TestSuiteFinishedEvent(uuid))
   }
 
-  private def testCaseStarted(suiteId: String, testName: String, location: Option[Location]) {
+  private def testCaseStarted(suiteId: String, testName: String, location: Option[Location]): Unit = {
     val uuid = getSuiteUuid(suiteId)
     val event = new TestCaseStartedEvent(uuid, testName)
-    val annotationManager = new AnnotationManager(getAnnotations(location):_*)
+    val annotationManager = new AnnotationManager(getAnnotations(location): _*)
     annotationManager.update(event)
     lifecycle.fire(event)
   }
 
-  private def testCaseFinished() {
+  private def testCaseFinished(): Unit = {
     lifecycle.fire(new TestCaseFinishedEvent())
   }
 
-  private def testCaseFailed(throwable: Throwable) {
+  private def testCaseFailed(throwable: Throwable): Unit = {
     lifecycle.fire(new TestCaseFailureEvent().withThrowable(throwable))
   }
 
-  private def testCaseCanceled(throwable: Option[Throwable]) {
+  private def testCaseCanceled(throwable: Option[Throwable]): Unit = {
     lifecycle.fire(throwable match {
       case Some(t) => new TestCaseCanceledEvent().withThrowable(t)
-      case None => new TestCaseCanceledEvent()
+      case None    => new TestCaseCanceledEvent()
     })
   }
-  
-  private def testCasePending() {
+
+  private def testCasePending(): Unit = {
     lifecycle.fire(new TestCasePendingEvent())
   }
 
-  def getAnnotations(location: Option[Location]): List[Annotation] = location match {
-    case Some(ln) => ln match {
-      case TopOfClass(className) => Class.forName(className).getAnnotations.toList
-      case TopOfMethod(className, methodName) => Class.forName(className).getMethod(methodName).getDeclaredAnnotations.toList
-      case _ => List()
-    }
-    case _ => List()
-  }
-  
 }

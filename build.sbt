@@ -24,7 +24,7 @@ scmInfo := Some(
 organizationName := "Yandex LLC"
 
 /* scala versions and options */
-scalaVersion := "2.11.8"
+scalaVersion := "2.12.7"
 
 crossScalaVersions := Seq()
 
@@ -35,11 +35,6 @@ scalacOptions ++= Seq(
   "-encoding", "UTF-8"
   // "-Xcheckinit" // for debugging only, see https://github.com/paulp/scala-faq/wiki/Initialization-Order
   // "-optimise"   // this option will slow your build
-)
-
-scalacOptions ++= Seq(
-  "-Yclosure-elim",
-  "-Yinline"
 )
 
 // These language flags will be used only for 2.10.x.
@@ -69,9 +64,9 @@ resolvers +=
   "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
 libraryDependencies ++= Seq (
-  "org.scalatest" %% "scalatest" % "2.2.6",
-  "ru.yandex.qatools.allure" % "allure-java-aspects" % "1.4.23",
-  "org.mockito" % "mockito-core" % "2.4.2" % "test"
+  "org.scalatest" %% "scalatest" % "3.0.5",
+  "ru.yandex.qatools.allure" % "allure-java-aspects" % "1.5.4",
+  "org.mockito" % "mockito-core" % "2.23.0" % "test"
 )
 
 /* testing */

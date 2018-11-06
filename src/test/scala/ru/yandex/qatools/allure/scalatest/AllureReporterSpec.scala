@@ -1,20 +1,14 @@
 package ru.yandex.qatools.allure.scalatest
 
-import org.scalatest.{BeforeAndAfter, FlatSpec}
-import ru.yandex.qatools.allure.Allure
-import org.mockito.Mockito._
-import org.scalatest.events._
-import ru.yandex.qatools.allure.events._
-import org.mockito.ArgumentCaptor
+import java.util.UUID
+
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
-import org.scalatest.events.TestStarting
-import org.scalatest.events.SuiteStarting
-import org.scalatest.events.TestSucceeded
-import org.scalatest.events.SuiteCompleted
-import org.scalatest.events.TestFailed
-import scala.Some
-import java.util.UUID
+import org.scalatest.events.{SuiteCompleted, SuiteStarting, TestFailed, TestStarting, TestSucceeded, _}
+import org.scalatest.{BeforeAndAfter, FlatSpec}
+import ru.yandex.qatools.allure.Allure
+import ru.yandex.qatools.allure.events._
+import ru.yandex.qatools.allure.utils.AnnotationManager
 
 class AllureReporterSpec extends FlatSpec with BeforeAndAfter {
 
@@ -38,6 +32,10 @@ class AllureReporterSpec extends FlatSpec with BeforeAndAfter {
     when(reporter.getSuiteUuid(anyString())).thenReturn(testUuid)
   }
 
+  after {
+    verifyNoMoreInteractions(allure)
+  }
+
   "AllureReporter" should "fire Allure TestSuiteStarted event on suite start" in {
     reporter.apply(SuiteStarting(
       testOrdinal,
@@ -57,108 +55,108 @@ class AllureReporterSpec extends FlatSpec with BeforeAndAfter {
 
   it should "fire TestSuiteFinished event on suite finish" in {
     reporter.apply(SuiteCompleted(
-      testOrdinal,
-      "",
-      "",
-      None,
-      None,
-      None,
-      None,
-      None,
-      None,
-      "",
-      testTimestamp
+      ordinal = testOrdinal,
+      suiteName = "",
+      suiteId = "",
+      suiteClassName = None,
+      duration = None,
+      formatter = None,
+      location = None,
+      rerunner = None,
+      payload = None,
+      threadName = "",
+      timeStamp = testTimestamp
     ))
     verify(allure).fire(new TestSuiteFinishedEvent(testUuid))
   }
 
   it should "fire TestCaseStarted event on test case start" in {
     reporter.apply(TestStarting(
-      testOrdinal,
-      "",
-      "",
-      None,
-      testMethodName,
-      "",
-      None,
-      None,
-      None,
-      None,
-      "",
-      testTimestamp
-    ))
+      ordinal = testOrdinal,
+      suiteName = "",
+      suiteId = testSuiteId,
+      suiteClassName = None,
+      testName = testMethodName,
+      testText = "",
+      formatter = None,
+      location = None,
+      rerunner = None,
+      payload = None,
+      threadName = "",
+      timeStamp = testTimestamp
+    )
+    )
 
-    // Mockito had trouble with the TestCaseStartedEvent reference.
-    // Just verify that the reporter didn't pass garbage arguments.
+    val event = new TestCaseStartedEvent(testUuid, testMethodName)
 
-    val captor = ArgumentCaptor.forClass(classOf[TestCaseStartedEvent])
-    verify(allure).fire(captor.capture())
+    // TestCaseStartedEvent event will be updated inside AllureReporter.testCaseStarted() method
+    // so need to do the same here to have the same object hashcode
+    val annotationManager = new AnnotationManager(reporter.getAnnotations(None): _*)
+    annotationManager.update(event)
 
-    val event = captor.getValue
-    assert(event.getSuiteUid == testUuid)
-    assert(event.getName == testMethodName)
+    verify(allure).fire(event)
   }
 
   it should "fire TestCaseFinished event on test case success" in {
     reporter.apply(TestSucceeded(
-      testOrdinal,
-      "",
-      "",
-      None,
-      "",
-      "",
-      collection.immutable.IndexedSeq.empty[RecordableEvent],
-      None,
-      None,
-      None,
-      None,
-      None,
-      "",
-      testTimestamp
+      ordinal = testOrdinal,
+      suiteName = "",
+      suiteId = "",
+      suiteClassName = None,
+      testName = "",
+      testText = "",
+      recordedEvents = collection.immutable.IndexedSeq.empty[RecordableEvent],
+      duration = None,
+      formatter = None,
+      location = None,
+      rerunner = None,
+      payload = None,
+      threadName = "",
+      timeStamp = testTimestamp
     ))
     verify(allure).fire(new TestCaseFinishedEvent)
   }
 
   it should "fire TestCaseFailed event with throwable on test case failure when throwable is present" in {
     reporter.apply(TestFailed(
-      testOrdinal,
-      "",
-      "",
-      "",
-      None,
-      "",
-      "",
-      collection.immutable.IndexedSeq.empty[RecordableEvent],
-      Some(testException),
-      None,
-      None,
-      None,
-      None,
-      None,
-      "",
-      testTimestamp
+      ordinal = testOrdinal,
+      message = "",
+      suiteName = "",
+      suiteId = "",
+      suiteClassName = None,
+      testName = "",
+      testText = "",
+      recordedEvents = collection.immutable.IndexedSeq.empty[RecordableEvent],
+      throwable = Some(testException),
+      duration = None,
+      formatter = None,
+      location = None,
+      rerunner = None,
+      payload = None,
+      threadName = "",
+      timeStamp = testTimestamp
     ))
     verify(allure).fire(new TestCaseFailureEvent().withThrowable(testException))
   }
 
   it should "fire TestCaseFailed event with runtime exception having message inside on test case failure when throwable is missing" in {
     reporter.apply(TestFailed(
-      testOrdinal,
-      testMessage,
-      "",
-      "",
-      None,
-      "",
-      "",
-      collection.immutable.IndexedSeq.empty[RecordableEvent],
-      None,
-      None,
-      None,
-      None,
-      None,
-      None,
-      "",
-      testTimestamp
+      ordinal = testOrdinal,
+      message = testMessage,
+      suiteName = "",
+      suiteId = "",
+      suiteClassName = None,
+      testName = "",
+      testText = "",
+      recordedEvents = collection.immutable.IndexedSeq.empty[RecordableEvent],
+      throwable = None,
+      duration = None,
+      formatter = None,
+      location = None,
+      rerunner = None,
+      payload = None,
+      threadName = "",
+      timeStamp = testTimestamp
     ))
     verify(allure).fire(any(classOf[TestCaseFailureEvent]))
   }
@@ -182,41 +180,41 @@ class AllureReporterSpec extends FlatSpec with BeforeAndAfter {
 
   it should "fire TestCasePending event when test case is pending" in {
     reporter.apply(TestPending(
-      testOrdinal,
-      testMessage,
-      "",
-      None,
-      "",
-      "",
-      collection.immutable.IndexedSeq.empty[RecordableEvent],
-      None,
-      None,
-      None,
-      None,
-      "",
-      testTimestamp
+      ordinal = testOrdinal,
+      suiteName = testMessage,
+      suiteId = "",
+      suiteClassName = None,
+      testName = "",
+      testText = "",
+      recordedEvents = collection.immutable.IndexedSeq.empty[RecordableEvent],
+      duration = None,
+      formatter = None,
+      location = None,
+      payload = None,
+      threadName = "",
+      timeStamp = testTimestamp
     ))
     verify(allure).fire(new TestCasePendingEvent)
   }
 
   it should "fire TestCaseCanceled event when test case is canceled" in {
     reporter.apply(TestCanceled(
-      testOrdinal,
-      testMessage,
-      "",
-      "",
-      None,
-      "",
-      "",
-      collection.immutable.IndexedSeq.empty[RecordableEvent],
-      None,
-      None,
-      None,
-      None,
-      None,
-      None,
-      "",
-      testTimestamp
+      ordinal = testOrdinal,
+      message = testMessage,
+      suiteName = "",
+      suiteId = "",
+      suiteClassName = None,
+      testName = "",
+      testText = "",
+      recordedEvents = collection.immutable.IndexedSeq.empty[RecordableEvent],
+      throwable = None,
+      duration = None,
+      formatter = None,
+      location = None,
+      rerunner = None,
+      payload = None,
+      threadName = "",
+      timeStamp = testTimestamp
     ))
     verify(allure).fire(new TestCaseCanceledEvent)
   }
@@ -232,12 +230,8 @@ class AllureReporterSpec extends FlatSpec with BeforeAndAfter {
 
   it should "return empty list when called with any location except TopOfMethod or TopOfClass or None" in {
     val reporter = new AllureReporter
-    assert(reporter.getAnnotations(Some(LineInFile(0, ""))).isEmpty)
+    assert(reporter.getAnnotations(Some(LineInFile(0, "", None))).isEmpty)
     assert(reporter.getAnnotations(None).isEmpty)
-  }
-
-  after {
-    verifyNoMoreInteractions(allure)
   }
 
 }

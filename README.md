@@ -1,3 +1,6 @@
+# [DEPRICATED]
+## Please follow https://github.com/allure-framework/allure-java
+
 # Allure ScalaTest Adapter
 This adapter allows to retrieve test execution data from [ScalaTest]() framework and convert it to the form suitable for [Allure report generation](https://github.com/allure-framework/allure-core/wiki#generating-report).
 
